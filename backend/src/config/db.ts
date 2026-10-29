@@ -5,13 +5,15 @@ dotenv.config();
 
 let isConnecting = false;
 
+const ATLAS_URI = 'mongodb+srv://siddarthareddyjanagama_db_user:HvoOcsdAoTCllFOx@cluster0.bindqki.mongodb.net/nxtwave-workshop?retryWrites=true&w=majority';
+
 const connectDB = async (): Promise<void> => {
   if (isConnecting) return;
   isConnecting = true;
-  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/nxtwave-workshop';
+  const uri = process.env.MONGODB_URI || ATLAS_URI;
   try {
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 8000,
+      serverSelectionTimeoutMS: 15000,
     });
     console.log('✅ MongoDB connected successfully');
     isConnecting = false;
