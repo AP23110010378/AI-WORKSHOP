@@ -100,51 +100,61 @@ app.use(errorHandler);
 
 // Start server
 const startServer = async () => {
-  await connectDB();
-
-  // Seed default admin if none exists
-  try {
-    const User = (await import('./models/User')).default;
-    const { generateReferralCode } = await import('./utils/helpers');
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@nxtwave.tech';
-    const existingAdmin = await User.findOne({ email: adminEmail });
-    if (!existingAdmin) {
-      const admin = new User({
-        name: process.env.ADMIN_NAME || 'Platform Admin',
-        email: adminEmail,
-        password: process.env.ADMIN_PASSWORD || 'Admin@123456',
-        role: 'admin',
-        emailVerified: true,
-        college: 'NxtWave',
-        branch: 'Administration',
-        graduationYear: 2025,
-        referralCode: generateReferralCode('ADMIN'),
-      });
-      await admin.save();
-      console.log(`✅ Default admin created on startup: ${adminEmail}`);
-    }
-  } catch (err) {
-    console.warn('⚠️ Admin auto-seed notice:', err);
-  }
-
-  // Seed default workshop if none exists
-  const Workshop = (await import('./models/Workshop')).default;
-  const workshopCount = await Workshop.countDocuments();
-  if (workshopCount === 0) {
-    await Workshop.create({
-      title: 'Build Your First AI Project in 60 Minutes',
-      description:
-        'Go from AI curiosity to a working project. A free, beginner-friendly online workshop designed for aspiring engineers. Learn how to build a real AI project from scratch with hands-on guidance.',
-      duration: 60,
-      status: 'published',
-    });
-    console.log('📦 Default workshop created');
-  }
-
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  // Start HTTP server immediately to bind port for Render / cloud platforms
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
+
+  // Connect to MongoDB
+  try {
+    await connectDB();
+
+    // Seed default admin if none exists
+    try {
+      const User = (await import('./models/User')).default;
+      const { generateReferralCode } = await import('./utils/helpers');
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@nxtwave.tech';
+      const existingAdmin = await User.findOne({ email: adminEmail });
+      if (!existingAdmin) {
+        const admin = new User({
+          name: process.env.ADMIN_NAME || 'Platform Admin',
+          email: adminEmail,
+          password: process.env.ADMIN_PASSWORD || 'Admin@123456',
+          role: 'admin',
+          emailVerified: true,
+          college: 'NxtWave',
+          branch: 'Administration',
+          graduationYear: 2025,
+          referralCode: generateReferralCode('ADMIN'),
+        });
+        await admin.save();
+        console.log(`✅ Default admin created on startup: ${adminEmail}`);
+      }
+    } catch (err) {
+      console.warn('⚠️ Admin auto-seed notice:', err);
+    }
+
+    // Seed default workshop if none exists
+    try {
+      const Workshop = (await import('./models/Workshop')).default;
+      const workshopCount = await Workshop.countDocuments();
+      if (workshopCount === 0) {
+        await Workshop.create({
+          title: 'Build Your First AI Project in 60 Minutes',
+          description:
+            'Go from AI curiosity to a working project. A free, beginner-friendly online workshop designed for aspiring engineers. Learn how to build a real AI project from scratch with hands-on guidance.',
+          duration: 60,
+          status: 'published',
+        });
+        console.log('📦 Default workshop created');
+      }
+    } catch (err) {
+      console.warn('⚠️ Workshop auto-seed notice:', err);
+    }
+  } catch (error: any) {
+    console.error('❌ Database initialization error:', error.message || error);
+  }
 };
 
 startServer().catch(console.error);
